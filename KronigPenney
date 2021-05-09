@@ -1,0 +1,54 @@
+function [E] = KronigPenney(k)
+
+global K
+a = 0.5 * 1e-9;
+U0=-4*1.602*1e-19;
+m = 9.109383701528 * 1e-31;
+b = 2 * 1e-9;
+h = 1.054571817 * 1e-34;
+
+range_E = [-3.999999:0.01:26];
+F = zeros(1,length(range_E));
+range_E_j = range_E.*1.602*1e-19; %пересчитываем в джоули
+mu= (range_E_j.*2.*m./h^2).^0.5;
+lambda = ((range_E_j-U0).*(2*m/h^2)).^0.5;
+F = real(cos(mu.*a).*cos(lambda.*b)-((mu.^2 + lambda.^2))./(mu.*lambda.*2).*sin(mu.*a).*sin(lambda.*b));
+diff_F = zeros(1,length(range_E)-1);
+
+for ii = 1:length(range_E) - 1
+    diff_F(ii) = F(ii+1) - F(ii);
+end
+
+%разбиваем на отрезки с потенциальными нулями
+zeroes = [];
+for jj = 1:(length(diff_F)-1)
+   if (((diff_F(jj) >= 0)&&(diff_F(jj + 1) <= 0))||((diff_F(jj) <= 0)&&(diff_F(jj + 1) >= 0)))
+       zeroes = [zeroes range_E(jj)];
+   end
+end
+
+E = zeros(length(zeroes) - 1, length(k));
+f = @fun;
+%ищем корни на отрезках
+for jj = 1:(length(zeroes) - 1)
+    delta_E = [zeroes(jj) zeroes(jj + 1)];
+    for ii = 1:length(k)
+        K = k(ii);
+        E(jj,ii) = fzero(f,delta_E);
+    end
+end
+
+end
+
+function y = fun(E)
+global K
+a = 0.5 * 1e-9;
+b = 2 * 1e-9;
+E = E.*1.602*1e-19;
+U0 = -4*1.602*1e-19;
+m = 9.109383701528 * 1e-31;
+h = 1.054571817 * 1e-34;
+mu = (E.*2.*m./h^2).^0.5;
+lambda = ((E-U0).*(2 * m/h^2)).^0.5;
+y = real(cos(mu.*a).*cos(lambda.*b) - ((mu.^2 + lambda.^2))./(mu.*lambda.*2).*sin(mu.*a).*sin(lambda.*b) - cos(K.*(a+b)));
+end
