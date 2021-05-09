@@ -1,0 +1,39 @@
+function [P, Err] = LinApproximator(funcs,y,r)
+%UNTITLED2 Summary of this function goes here
+%   Detailed explanation goes here
+M = length(funcs);
+N = length(y);
+A = zeros(M,M);
+for ii = 1:M
+    for jj = 1:M
+        for kk = 1:N
+            t = num2cell(r(:,kk));
+            A(ii,jj) = A(ii,jj) + funcs{jj}(t{:})*funcs{ii}(t{:});
+        end
+    end
+end
+B = zeros(M,1);
+for ii = 1:M
+    for jj = 1:N
+        l = num2cell(r(:,jj));
+        B(ii) = B(ii) + y(jj)*funcs{ii}(l{:});
+    end
+end
+[Q, R] = qr(A);
+P = R\(Q'*B);
+p = zeros(M,1);
+Err = 0;
+for ii = 1 : N
+    column = num2cell(r(:,ii));
+    t = 0;
+    for jj = 1 : M
+        t = t + P(jj) * funcs{jj}(column{:});
+    end
+    Err = Err + (y(ii) - t)*(y(ii) - t);
+end
+for ii = 1 : M
+    a = A(ii,ii);
+    p(ii) = (Err/(2 * a))^(0.5);
+end
+sigma = p
+end
